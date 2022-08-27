@@ -29,8 +29,10 @@ public class WebConfig implements WebMvcConfigurer {
     public SpringResourceTemplateResolver templateResolver() {
         SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
         templateResolver.setApplicationContext(applicationContext);
+        templateResolver.setCharacterEncoding("UTF-8");
         templateResolver.setPrefix("/WEB-INF/views/");
         templateResolver.setSuffix(".html");
+
         return templateResolver;
     }
 
@@ -45,7 +47,11 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void configureViewResolvers(ViewResolverRegistry registry) {
         ThymeleafViewResolver resolver = new ThymeleafViewResolver();
+        resolver.setCharacterEncoding("UTF-8");
+        resolver.setForceContentType(true);
+        resolver.setContentType("text/html; charset=UTF-8");
         resolver.setTemplateEngine(templateEngine());
         registry.viewResolver(resolver);
+
     }
 }
