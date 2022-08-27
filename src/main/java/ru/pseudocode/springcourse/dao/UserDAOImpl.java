@@ -1,121 +1,56 @@
 package ru.pseudocode.springcourse.dao;
 
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import ru.pseudocode.springcourse.model.User;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class UserDAOImpl implements UserDAO {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/pre_project";
-    private static final String USER = "root";
-    private static final String PASS = "admin";
+    private final SessionFactory sessionFactory;
 
-    private static Connection connection;
-
-    static {
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        try {
-            connection = DriverManager.getConnection(URL, USER, PASS);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    @Autowired
+    public UserDAOImpl(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
     }
 
-
+    @Transactional(readOnly = true)
     public List<User> index() {
-        List<User> users = new ArrayList<>();
-        try {
-            Statement statement = connection.createStatement();
-            String SQL = "SELECT * FROM users";
-            ResultSet resultSet = statement.executeQuery(SQL);
-
-            while (resultSet.next()) {
-                User user = new User();
-                user.setId(resultSet.getInt("id"));
-                user.setName(resultSet.getString("name"));
-                user.setEmail(resultSet.getString("email"));
-                user.setAge(resultSet.getInt("age"));
-
-                users.add(user);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        Session session = sessionFactory.getCurrentSession();
+        List<User> users = session.createQuery("select u from User u", User.class).getResultList();
         return users;
     }
 
-    public void save(User user) {
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO users VALUES (1, ?, ?, ?)");
-            preparedStatement.setString(1, user.getName());
-            preparedStatement.setInt(2, user.getAge());
-            preparedStatement.setString(3, user.getEmail());
-
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-
-    }
-
+    @Transactional(readOnly = true)
     public User show(int id) {
-        User user = null;
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users WHERE id=?");
-            preparedStatement.setInt(1, id);
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            resultSet.next();
-            user = new User();
-            user.setId(resultSet.getInt("id"));
-            user.setName(resultSet.getString("name"));
-            user.setAge(resultSet.getInt("age"));
-            user.setEmail(resultSet.getString("email"));
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-
-        return user;
+        Session session = sessionFactory.getCurrentSession();
+        return session.get(User.class, id);
     }
 
+    @Transactional
+    public void save(User user) {
+        Session session = sessionFactory.getCurrentSession();
+        session.save(user);
+    }
+
+    @Transactional
     public void update(int id, User updatedUser) {
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("UPDATE users SET name = ?, age = ?, email = ? WHERE id = ?");
-            preparedStatement.setString(1, updatedUser.getName());
-            preparedStatement.setInt(2, updatedUser.getAge());
-            preparedStatement.setString(3, updatedUser.getEmail());
-            preparedStatement.setInt(4, id);
+        Session session = sessionFactory.getCurrentSession();
+        User user = session.get(User.class, id);
 
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+        user.setName(updatedUser.getName());
+        user.setEmail(updatedUser.getEmail());
+        user.setAge(updatedUser.getAge());
     }
 
-    @Override
+    @Transactional
     public void delete(int id) {
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM users WHERE id = ?");
-            preparedStatement.setInt(1, id);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-
+        Session session = sessionFactory.getCurrentSession();
+        session.delete(session.get(User.class, id));
     }
-
-
 }
