@@ -1,56 +1,33 @@
 package ru.pseudocode.springcourse.dao;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.stereotype.Repository;
 import ru.pseudocode.springcourse.model.User;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.List;
 
-@Component
+@Repository
 public class UserDAOImpl implements UserDAO {
 
-    private final SessionFactory sessionFactory;
+    @PersistenceContext
+    private EntityManager entityManager;
 
-    @Autowired
-    public UserDAOImpl(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
-    }
+    public List<User> index() { return entityManager.createQuery("select u from User u", User.class).getResultList(); }
 
-    @Transactional(readOnly = true)
-    public List<User> index() {
-        Session session = sessionFactory.getCurrentSession();
-        List<User> users = session.createQuery("select u from User u", User.class).getResultList();
-        return users;
-    }
-
-    @Transactional(readOnly = true)
     public User show(int id) {
-        Session session = sessionFactory.getCurrentSession();
-        return session.get(User.class, id);
+        return entityManager.find(User.class, id);
     }
 
-    @Transactional
     public void save(User user) {
-        Session session = sessionFactory.getCurrentSession();
-        session.save(user);
+        entityManager.persist(user);
     }
 
-    @Transactional
-    public void update(int id, User updatedUser) {
-        Session session = sessionFactory.getCurrentSession();
-        User user = session.get(User.class, id);
-
-        user.setName(updatedUser.getName());
-        user.setEmail(updatedUser.getEmail());
-        user.setAge(updatedUser.getAge());
+    public void update(User updatedUser) {
+        entityManager.merge(updatedUser);
     }
 
-    @Transactional
     public void delete(int id) {
-        Session session = sessionFactory.getCurrentSession();
-        session.delete(session.get(User.class, id));
+        entityManager.remove(show(id));
     }
 }
